@@ -20,7 +20,7 @@ const GameBoard = () => {
     lastMovedPieceColor,
     gameStarted,
   } = state;
-  console.log(state);
+  
   // Handle cell click
   const handleCellClick = (position: Position) => {
     // If no piece is selected, do nothing (cell clicks only matter when moving)

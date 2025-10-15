@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -6,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
   ReactNode,
+  useRef,
 } from "react";
 import {
   GameState,
@@ -30,7 +30,6 @@ export type GameHistoryState = GameState & {
   aiEnabled: boolean;
 };
 
-// Create context
 interface GameContextType {
   state: GameState & { aiEnabled: boolean };
   selectPiece: (piece: Piece) => void;
@@ -56,20 +55,18 @@ const gameReducer = (
   action: GameAction
 ): GameHistoryState => {
   switch (action.type) {
-    case "SELECT_PIECE":
-      if (
-        state.history.length > 0 &&
-        state.history[state.history.length - 1].selectedPiece?.id ===
-          action.piece.id
-      ) {
+    case "SELECT_PIECE": {
+      // Prevent re-selecting the same piece
+      if (state.selectedPiece?.id === action.piece.id) {
         return state;
       }
-      // Only allow selecting a piece if it belongs to the current player
+
+      // Only allow selecting current player's pieces
       if (action.piece.player !== state.currentPlayer) {
         return state;
       }
 
-      // If there's a specific color piece that must be moved, check this is that color
+      // Check color restriction
       if (state.lastMovedPieceColor !== null) {
         const mustMovePieces = state.pieces.filter(
           (p) =>
@@ -77,7 +74,6 @@ const gameReducer = (
             p.player === state.currentPlayer
         );
 
-        // If there are pieces of the required color, and this isn't one of them, don't select it
         if (
           mustMovePieces.length > 0 &&
           action.piece.color !== state.lastMovedPieceColor
@@ -90,6 +86,7 @@ const gameReducer = (
         ...state,
         selectedPiece: action.piece,
       };
+    }
 
     case "DESELECT_PIECE":
       return {
@@ -97,8 +94,8 @@ const gameReducer = (
         selectedPiece: null,
       };
 
-    case "MOVE_PIECE":
-      // Check if move is valid
+    case "MOVE_PIECE": {
+      // Validate move
       if (
         !state.selectedPiece ||
         !isValidMove(state, action.move.from, action.move.to)
@@ -106,30 +103,33 @@ const gameReducer = (
         return state;
       }
 
-      // Save current state to history before making move
-      const currentState = {
-        ...state,
-        selectedPiece: null, // Clear selection for history
+      // Save current state to history (without selection)
+      const stateForHistory: GameState = {
+        board: state.board,
+        pieces: state.pieces,
+        currentPlayer: state.currentPlayer,
+        selectedPiece: null,
+        lastMovedPieceColor: state.lastMovedPieceColor,
+        winner: state.winner,
+        gameStarted: state.gameStarted,
       };
 
-      // Make the move and update state
+      // Make the move
       const newStateBase = makeMove(state, action.move.from, action.move.to);
-      const newState = {
-        ...newStateBase,
-        history: [...state.history, currentState],
-        future: [],
-      };
 
-      // After the move, check if the next player is blocked
+      // Check if next player is blocked
       const blocked = checkBlocked(newStateBase);
-      if (blocked) {
-        return {
-          ...newState,
-          winner: blocked,
-        };
-      }
+      const finalState = blocked
+        ? { ...newStateBase, winner: blocked }
+        : newStateBase;
 
-      return newState;
+      return {
+        ...finalState,
+        history: [...state.history, stateForHistory],
+        future: [],
+        aiEnabled: state.aiEnabled,
+      };
+    }
 
     case "RESET_GAME":
       return {
@@ -137,40 +137,63 @@ const gameReducer = (
         history: [],
         future: [],
         gameStarted: state.gameStarted,
+        aiEnabled: state.aiEnabled,
       };
 
-    case "UNDO":
+    case "UNDO": {
       if (state.history.length === 0) return state;
 
       const previousState = state.history[state.history.length - 1];
       const newHistory = state.history.slice(0, -1);
-      const newFuture = [state, ...state.future];
+
+      const currentStateForFuture: GameState = {
+        board: state.board,
+        pieces: state.pieces,
+        currentPlayer: state.currentPlayer,
+        selectedPiece: null,
+        lastMovedPieceColor: state.lastMovedPieceColor,
+        winner: state.winner,
+        gameStarted: state.gameStarted,
+      };
 
       return {
         ...previousState,
         history: newHistory,
-        future: newFuture,
+        future: [currentStateForFuture, ...state.future],
+        aiEnabled: state.aiEnabled,
       };
+    }
 
-    case "REDO":
+    case "REDO": {
       if (state.future.length === 0) return state;
 
       const nextState = state.future[0];
-      const redoNewFuture = state.future.slice(1);
-      const redoNewHistory = [...state.history, state];
+      const newFuture = state.future.slice(1);
+
+      const currentStateForHistory: GameState = {
+        board: state.board,
+        pieces: state.pieces,
+        currentPlayer: state.currentPlayer,
+        selectedPiece: null,
+        lastMovedPieceColor: state.lastMovedPieceColor,
+        winner: state.winner,
+        gameStarted: state.gameStarted,
+      };
 
       return {
         ...nextState,
-        history: redoNewHistory,
-        future: redoNewFuture,
+        history: [...state.history, currentStateForHistory],
+        future: newFuture,
+        aiEnabled: state.aiEnabled,
       };
+    }
 
     case "START_GAME":
       return {
         ...state,
         gameStarted: true,
       };
-      
+
     case "TOGGLE_AI":
       return {
         ...state,
@@ -182,100 +205,127 @@ const gameReducer = (
   }
 };
 
-// Provider component
 interface GameProviderProps {
   children: ReactNode;
 }
 
-// Assume AI plays as black
-const aiPlayer: Player = "black";
+const aiPlayer: Player = "white";
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const initialHistoryState: GameHistoryState = {
     ...initialGameState,
     history: [],
     future: [],
-    aiEnabled: true, // Default to AI enabled
+    aiEnabled: true,
   };
 
   const [state, dispatch] = useReducer(gameReducer, initialHistoryState);
+  const aiMoveInProgressRef = useRef(false);
+  // Easy: depth = 2 ,Medium: depth = 3 , Hard: depth = 4 (default) , Expert: depth = 5 (slower but stronger)
+  const { getAIMove, isComputing } = useAI(state as GameState, aiPlayer, 5);
 
-  const { getAIMove, isComputing } = useAI(state as GameState, aiPlayer, 3);
-
-  // Define action dispatchers first
-  const selectPiece = (piece: Piece) => {
+  // Action dispatchers
+  const selectPiece = useCallback((piece: Piece) => {
     dispatch({ type: "SELECT_PIECE", piece });
-  };
+  }, []);
 
-  const deselectPiece = () => {
+  const deselectPiece = useCallback(() => {
     dispatch({ type: "DESELECT_PIECE" });
-  };
+  }, []);
 
-  const movePiece = (move: Move) => {
+  const movePiece = useCallback((move: Move) => {
     dispatch({ type: "MOVE_PIECE", move });
-  };
+  }, []);
 
-  const handleAIMove = useCallback(async () => {
-    if (!state.gameStarted || state.winner) return;
+  const resetGame = useCallback(() => {
+    aiMoveInProgressRef.current = false;
+    dispatch({ type: "RESET_GAME" });
+  }, []);
 
-    const move = await getAIMove();
-    if (move) {
-      movePiece(move);
-    }
-  }, [getAIMove, state.gameStarted, state.winner, movePiece]);
+  const startGame = useCallback(() => {
+    dispatch({ type: "START_GAME" });
+  }, []);
 
-  const toggleAI = () => {
+  const undo = useCallback(() => {
+    dispatch({ type: "UNDO" });
+  }, []);
+
+  const redo = useCallback(() => {
+    dispatch({ type: "REDO" });
+  }, []);
+
+  const toggleAI = useCallback(() => {
     dispatch({ type: "TOGGLE_AI" });
-  };
+  }, []);
 
+  const getValidMovesForPiece = useCallback(
+    (piece: Piece): Position[] => {
+      return getValidMoves(piece, state as GameState);
+    },
+    [state]
+  );
+
+  const canMovePiece = useCallback(
+    (from: Position, to: Position): boolean => {
+      return isValidMove(state as GameState, from, to);
+    },
+    [state]
+  );
+
+  // AI move handling with proper dependency management
   useEffect(() => {
-    // Add a small delay to make AI moves more natural and ensure UI updates first
-    const timer = setTimeout(() => {
+    let mounted = true;
+
+    const makeAIMove = async () => {
+      // Check all conditions
       if (
-        state.aiEnabled && // Only make moves if AI is enabled
-        state.currentPlayer === aiPlayer &&
-        state.gameStarted &&
-        !state.winner &&
-        !isComputing
+        !state.aiEnabled ||
+        state.currentPlayer !== aiPlayer ||
+        !state.gameStarted ||
+        state.winner ||
+        isComputing ||
+        aiMoveInProgressRef.current
       ) {
-        console.log("AI should make a move now");
-        handleAIMove();
+        return;
       }
-    }, 500);
-    
-    return () => clearTimeout(timer);
+
+      aiMoveInProgressRef.current = true;
+
+      try {
+        // Small delay to let UI update
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        if (!mounted) return;
+
+        const move = await getAIMove();
+
+        if (mounted && move) {
+          movePiece(move);
+        }
+      } catch (error) {
+        console.error("AI move error:", error);
+      } finally {
+        if (mounted) {
+          aiMoveInProgressRef.current = false;
+        }
+      }
+    };
+
+    makeAIMove();
+
+    return () => {
+      mounted = false;
+    };
   }, [
     state.currentPlayer,
     state.gameStarted,
     state.winner,
+    state.aiEnabled,
+    state.pieces.length, // Track piece changes to detect moves
     isComputing,
-    handleAIMove,
-    state.aiEnabled, // Add aiEnabled to dependencies
+    getAIMove,
+    movePiece,
   ]);
-
-  const undo = () => {
-    dispatch({ type: "UNDO" });
-  };
-
-  const redo = () => {
-    dispatch({ type: "REDO" });
-  };
-
-  const resetGame = () => {
-    dispatch({ type: "RESET_GAME" });
-  };
-
-  const startGame = () => {
-    dispatch({ type: "START_GAME" });
-  };
-
-  const getValidMovesForPiece = (piece: Piece): Position[] => {
-    return getValidMoves(piece, state);
-  }
-
-  const canMovePiece = (from: Position, to: Position): boolean => {
-    return isValidMove(state, from, to);
-  }
 
   return (
     <GameContext.Provider
