@@ -14,11 +14,12 @@ import { BookOpen } from 'lucide-react';
 
 const GuidesSection = () => {
   const [open, setOpen] = React.useState(false);
-  const { t } = useLanguage();
-
+  const { t , language } = useLanguage();
+console.log(language)
   return (
     <>
       <Button
+      dir={language === 'en' ? 'ltr' : 'rtl'}
         variant="outline"
         size="sm"
         className="flex items-center gap-2"
@@ -30,14 +31,14 @@ const GuidesSection = () => {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t.guides.title}</DialogTitle>
-            <DialogDescription>
+          <DialogHeader dir={language === 'en' ? 'ltr' : 'rtl'} >
+            <DialogTitle className={`${language === 'en' ? 'text-left' : 'text-center'}`}>{t.guides.title}</DialogTitle>
+            <DialogDescription className={`${language === 'en' ? 'text-left' : 'text-right'}`}>
               {t.guides.introduction}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 my-4 text-left">
+          <div dir={language === 'en' ? 'ltr' : 'rtl'} className={`space-y-4 my-4 ${language === 'en' ? 'text-left' : 'text-right'}`}>
             <div className="space-y-2">
               <h3 className="font-medium">{t.guides.objective}</h3>
             </div>

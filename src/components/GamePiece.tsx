@@ -17,8 +17,8 @@ const GamePiece = ({ piece, isSelected, onClick, highlight }: GamePieceProps) =>
   
   // Player-specific styles
   const playerClasses = {
-    black: 'bg-kamisado-black border-2 border-gray-700',
-    white: 'bg-kamisado-white border-2 border-gray-300'
+    black: 'bg-kamisado-black ',
+    white: 'bg-kamisado-white '
   };
   
   // Color indicator (small circle inside the piece)
@@ -32,7 +32,6 @@ const GamePiece = ({ piece, isSelected, onClick, highlight }: GamePieceProps) =>
     green: 'bg-kamisado-green',
     brown: 'bg-kamisado-brown'
   };
-
   return (
     <div
       onClick={(e) => {
@@ -42,8 +41,10 @@ const GamePiece = ({ piece, isSelected, onClick, highlight }: GamePieceProps) =>
       className={cn(
         baseClasses,
         playerClasses[player],
-        isSelected && 'ring-2 ring-offset-2 ring-white transform-gpu scale-110',
-        highlight && 'ring-2 ring-white ring-opacity-50 animate-pulse-subtle'
+        isSelected && player === 'black' && 'ring ring-offset ring-white transform-gpu scale-110',
+        isSelected && player === 'white' && 'ring ring-offset ring-black transform-gpu scale-110',
+        highlight && player === 'black' && 'ring ring-white animate-pulse-subtle',
+        highlight && player === 'white' && 'ring ring-black animate-pulse-subtle'
       )}
     >
       {/* Color indicator in the center of the piece */}

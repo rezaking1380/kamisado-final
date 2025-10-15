@@ -3,12 +3,13 @@ import { useGame } from '@/contexts/GameContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ArrowRight, RefreshCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, RefreshCcw, Undo, Redo, Bot, User } from 'lucide-react';
 import LanguageSwitcher from './LanguageSwitcher';
 import GuidesSection from './GuidesSection';
 
 const GameInfo = () => {
-  const { state, resetGame, startGame } = useGame();
+  const { state, resetGame, startGame, undo, redo, canUndo, canRedo, isAIThinking, toggleAI } = useGame();
   const { t } = useLanguage();
   const { currentPlayer, winner, lastMovedPieceColor, gameStarted } = state;
 
@@ -24,7 +25,7 @@ const GameInfo = () => {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto my-6 glass-panel p-4 animate-slide-up">
+    <div className="w-full max-w-xl mx-auto my-6 glass-panel p-2 lg:p-4 animate-slide-up">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-semibold">{t.gameName}</h2>
         
@@ -57,25 +58,47 @@ const GameInfo = () => {
           </Button>
         </div>
       ) : winner ? (
-        <div className="text-center p-4 animate-scale-in">
-          <h3 className="text-xl font-medium mb-2">
+        <motion.div 
+          className="text-center p-4 animate-scale-in"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          key="winner"
+        >
+          <motion.h3 
+            className="text-xl font-medium mb-2"
+            initial={{ y: -20 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
             {t.gameInfo.gameOver}
-          </h3>
-          <p className="text-lg">
+          </motion.h3>
+          <motion.p 
+            className="text-lg"
+            initial={{ y: -10 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+          >
             <span className={cn(
               "font-bold",
               winner === 'black' ? 'text-kamisado-black' : 'text-gray-600'
             )}>
               {winner.charAt(0).toUpperCase() + winner.slice(1)} 
             </span> {t.gameInfo.wins}
-          </p>
-          <Button 
-            onClick={resetGame}
-            className="mt-4"
+          </motion.p>
+          <motion.div 
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.4, duration: 0.2 }}
           >
-            {t.gameInfo.playAgain}
-          </Button>
-        </div>
+            <Button 
+              onClick={resetGame}
+              className="mt-4"
+            >
+              {t.gameInfo.playAgain}
+            </Button>
+          </motion.div>
+        </motion.div>
       ) : (
         <>
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -102,6 +125,36 @@ const GameInfo = () => {
                 </div>
               </>
             )}
+          </div>
+          
+          <div className="flex justify-center gap-2 mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={undo}
+              disabled={!canUndo}
+            >
+              <Undo className="h-4 w-4 mr-1" />
+              Undo
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={redo}
+              disabled={!canRedo}
+            >
+              <Redo className="h-4 w-4 mr-1" />
+              Redo
+            </Button>
+            <Button
+              variant={state.aiEnabled ? "default" : "outline"}
+              size="sm"
+              onClick={toggleAI}
+              className={cn(isAIThinking && "animate-pulse", "flex items-center gap-1")}
+            >
+              {state.aiEnabled ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+              {state.aiEnabled ? 'AI On' : 'AI Off'}
+            </Button>
           </div>
         </>
       )}

@@ -23,6 +23,7 @@ export interface GameState {
   lastMovedPieceColor: Color | null;
   winner: Player | null;
   gameStarted: boolean;
+  aiEnabled?: boolean;
 }
 
 export type Move = {
@@ -35,4 +36,5 @@ export type GameAction =
   | { type: 'DESELECT_PIECE' }
   | { type: 'MOVE_PIECE'; move: Move }
   | { type: 'RESET_GAME' }
-  | { type: 'START_GAME' };
+  | { type: 'START_GAME' }
+  | { type: 'TOGGLE_AI' };

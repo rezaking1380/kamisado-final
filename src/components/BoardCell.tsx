@@ -27,11 +27,11 @@ const BoardCell = ({ color, position, onClick, children, highlight, isSelected }
   return (
     <div
       className={cn(
-        'board-cell w-12 h-12 sm:w-16 sm:h-16 relative',
+        'board-cell aspect-square w-10 h-10 sm:w-16 sm:h-16 relative rounded-lg',
         colorMap[color],
         'transition-all duration-300',
-        highlight && 'ring-2 ring-white/50 dark:ring-white/70 z-10',
-        isSelected && 'ring-2 ring-white/80 dark:ring-white/90 z-20'
+        highlight && 'border border-black rounded-lg shadow-lg shadow-black/30 dark:shadow-black/50 z-10',
+        isSelected && 'border border-black rounded-lg shadow-lg shadow-black/30 dark:shadow-black/50 z-20'
       )}
       onClick={onClick}
       data-position={`${position.row},${position.col}`}
