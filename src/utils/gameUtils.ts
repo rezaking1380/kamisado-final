@@ -65,6 +65,12 @@ export const getPieceAtPosition = (pieces: Piece[], position: Position): Piece |
   );
 };
 
+// Get distance from piece to goal row
+export const getDistanceToGoal = (piece: Piece): number => {
+  const goalRow = piece.player === 'black' ? 7 : 0;
+  return Math.abs(piece.position.row - goalRow);
+};
+
 // Get all valid moves for a piece
 export const getValidMoves = (piece: Piece, gameState: GameState): Position[] => {
   const validMoves: Position[] = [];
@@ -122,7 +128,7 @@ export const checkWinner = (pieces: Piece[], board: Color[][]): Player | null =>
   return null;
 };
 
-// Make a move and update the game state
+// Make a move and update the game state - FIX: Check winner immediately after move
 export const makeMove = (gameState: GameState, from: Position, to: Position): GameState => {
   const { pieces, currentPlayer, board } = gameState;
   
@@ -139,13 +145,25 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
     idx === pieceIndex ? { ...p, position: { ...to } } : p
   );
   
-  // Get the color of the target cell
+  // Get the color of the target cell for next move restriction
   const targetCellColor = board[to.row][to.col];
   
-  // Check for winner
+  // ✅ FIX: Check for winner IMMEDIATELY after the move
   const winner = checkWinner(updatedPieces, board);
   
-  // Switch players
+  // If there's a winner, don't switch players - game is over
+  if (winner) {
+    return {
+      ...gameState,
+      pieces: updatedPieces,
+      currentPlayer: currentPlayer, // Keep same player
+      // selectedPiece: null,
+      // lastMovedPieceColor: targetCellColor,
+      winner // Set winner
+    };
+  }
+  
+  // No winner yet, switch players
   const nextPlayer: Player = currentPlayer === 'black' ? 'white' : 'black';
   
   return {
@@ -154,7 +172,7 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
     currentPlayer: nextPlayer,
     selectedPiece: null,
     lastMovedPieceColor: targetCellColor,
-    winner
+    winner: null
   };
 };
 
@@ -162,6 +180,11 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
 export const canMovePiece = (piece: Piece, gameState: GameState): boolean => {
   // Must be current player's piece
   if (piece.player !== gameState.currentPlayer) {
+    return false;
+  }
+  
+  // If there's a winner, no pieces can move
+  if (gameState.winner) {
     return false;
   }
   
@@ -198,6 +221,11 @@ export const isValidMove = (gameState: GameState, from: Position, to: Position):
 
 // Get all valid moves for current player
 export const getAllValidMoves = (gameState: GameState): Move[] => {
+  // If there's a winner, no moves are valid
+  if (gameState.winner) {
+    return [];
+  }
+  
   const validMoves: Move[] = [];
   const playerPieces = gameState.pieces.filter(
     piece => piece.player === gameState.currentPlayer
@@ -244,12 +272,6 @@ export const getPieceByColor = (gameState: GameState, color: Color): Piece | und
   return gameState.pieces.find(
     piece => piece.color === color && piece.player === gameState.currentPlayer
   );
-};
-
-// Calculate distance to goal for a piece
-export const getDistanceToGoal = (piece: Piece): number => {
-  const goalRow = piece.player === 'black' ? 7 : 0;
-  return Math.abs(piece.position.row - goalRow);
 };
 
 // Deep clone game state for AI simulation

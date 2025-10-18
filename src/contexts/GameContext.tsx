@@ -56,6 +56,11 @@ const gameReducer = (
 ): GameHistoryState => {
   switch (action.type) {
     case "SELECT_PIECE": {
+      // Can't select pieces if game is over
+      if (state.winner) {
+        return state;
+      }
+
       // Prevent re-selecting the same piece
       if (state.selectedPiece?.id === action.piece.id) {
         return state;
@@ -95,6 +100,10 @@ const gameReducer = (
       };
 
     case "MOVE_PIECE": {
+      // Can't move if game is over
+      if (state.winner) {
+        return state;
+      }
       // Validate move
       if (
         !state.selectedPiece ||
@@ -114,14 +123,17 @@ const gameReducer = (
         gameStarted: state.gameStarted,
       };
 
-      // Make the move
+      // ✅ FIX: Make the move (winner is determined inside makeMove now)
       const newStateBase = makeMove(state, action.move.from, action.move.to);
 
-      // Check if next player is blocked
-      const blocked = checkBlocked(newStateBase);
-      const finalState = blocked
-        ? { ...newStateBase, winner: blocked }
-        : newStateBase;
+      // Only check for blocked if there's no winner yet
+      let finalState = newStateBase;
+      if (!newStateBase.winner) {
+        const blocked = checkBlocked(newStateBase);
+        if (blocked) {
+          finalState = { ...newStateBase, winner: blocked };
+        }
+      }
 
       return {
         ...finalState,
@@ -209,7 +221,7 @@ interface GameProviderProps {
   children: ReactNode;
 }
 
-const aiPlayer: Player = "white";
+const aiPlayer: Player = "black";
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const initialHistoryState: GameHistoryState = {
@@ -221,8 +233,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
   const [state, dispatch] = useReducer(gameReducer, initialHistoryState);
   const aiMoveInProgressRef = useRef(false);
-  // Easy: depth = 2 ,Medium: depth = 3 , Hard: depth = 4 (default) , Expert: depth = 5 (slower but stronger)
-  const { getAIMove, isComputing } = useAI(state as GameState, aiPlayer, 5);
+
+  const { getAIMove, isComputing } = useAI(state as GameState, aiPlayer, 4);
 
   // Action dispatchers
   const selectPiece = useCallback((piece: Piece) => {
@@ -277,7 +289,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     let mounted = true;
 
     const makeAIMove = async () => {
-      // Check all conditions
+      // ✅ Check winner status
       if (
         !state.aiEnabled ||
         state.currentPlayer !== aiPlayer ||
@@ -297,9 +309,15 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
         if (!mounted) return;
 
+        // ✅ Double-check winner status before getting move
+        if (state.winner) {
+          aiMoveInProgressRef.current = false;
+          return;
+        }
+
         const move = await getAIMove();
 
-        if (mounted && move) {
+        if (mounted && move && !state.winner) {
           movePiece(move);
         }
       } catch (error) {
@@ -319,9 +337,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   }, [
     state.currentPlayer,
     state.gameStarted,
-    state.winner,
+    state.winner, // ⭐ Watch winner changes
     state.aiEnabled,
-    state.pieces.length, // Track piece changes to detect moves
+    state.pieces.length,
     isComputing,
     getAIMove,
     movePiece,
