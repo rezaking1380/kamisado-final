@@ -284,60 +284,75 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     [state]
   );
 
+    const handleAIMove = useCallback(async () => {
+    if (!state.gameStarted || state.winner) return;
+
+    const move = await getAIMove();
+    if (move) {
+      movePiece(move);
+    }
+  }, [getAIMove, state.gameStarted, state.winner, movePiece]);
+
   // AI move handling with proper dependency management
   useEffect(() => {
-    let mounted = true;
+    // let mounted = true;
 
-    const makeAIMove = async () => {
-      // ✅ Check winner status
+    // const makeAIMove = async () => {
+    //   if (
+    //     state.aiEnabled && // Only make moves if AI is enabled
+    //     state.currentPlayer === aiPlayer &&
+    //     state.gameStarted &&
+    //     !state.winner &&
+    //     !isComputing
+    //   ) {
+    //     return;
+    //   }
+
+    //   aiMoveInProgressRef.current = true;
+
+    //   try {
+    //     await new Promise((resolve) => setTimeout(resolve, 300));
+
+    //     if (!mounted || state.winner) return; 
+
+    //     const move = await getAIMove();
+
+    //     if (mounted && move && !state.winner) {
+    //       movePiece(move);
+    //     }
+    //   } catch (error) {
+    //     console.error("AI move error:", error);
+    //   } finally {
+    //     if (mounted) {
+    //       aiMoveInProgressRef.current = false;
+    //     }
+    //   }
+    // };
+
+    // makeAIMove();
+
+    const timer = setTimeout(() => {
       if (
-        !state.aiEnabled ||
-        state.currentPlayer !== aiPlayer ||
-        !state.gameStarted ||
-        state.winner ||
-        isComputing ||
-        aiMoveInProgressRef.current
+        state.aiEnabled && // Only make moves if AI is enabled
+        state.currentPlayer === aiPlayer &&
+        state.gameStarted &&
+        !state.winner &&
+        !isComputing
       ) {
-        return;
+        console.log("AI should make a move now");
+        handleAIMove();
       }
+    }, 500);
+    
+    return () => clearTimeout(timer);
 
-      aiMoveInProgressRef.current = true;
-
-      try {
-        // Small delay to let UI update
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        if (!mounted) return;
-
-        // ✅ Double-check winner status before getting move
-        if (state.winner) {
-          aiMoveInProgressRef.current = false;
-          return;
-        }
-
-        const move = await getAIMove();
-
-        if (mounted && move && !state.winner) {
-          movePiece(move);
-        }
-      } catch (error) {
-        console.error("AI move error:", error);
-      } finally {
-        if (mounted) {
-          aiMoveInProgressRef.current = false;
-        }
-      }
-    };
-
-    makeAIMove();
-
-    return () => {
-      mounted = false;
-    };
+    // return () => {
+    //   mounted = false;
+    // };
   }, [
     state.currentPlayer,
     state.gameStarted,
-    state.winner, // ⭐ Watch winner changes
+    state.winner, // ⭐ Must be in dependencies
     state.aiEnabled,
     state.pieces.length,
     isComputing,

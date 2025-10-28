@@ -105,28 +105,16 @@ export const getValidMoves = (piece: Piece, gameState: GameState): Position[] =>
 
 // Check if a player has won
 export const checkWinner = (pieces: Piece[], board: Color[][]): Player | null => {
-  // Black wins if reaching row 7 with matching tower color
   for (const piece of pieces) {
     if (piece.player === 'black' && piece.position.row === 7) {
-      const towerColor = board[7][piece.position.col];
-      if (towerColor === piece.color) {
-        return 'black';
-      }
+      return 'black';  // No color matching needed!
     }
-  }
-  
-  // White wins if reaching row 0 with matching tower color
-  for (const piece of pieces) {
     if (piece.player === 'white' && piece.position.row === 0) {
-      const towerColor = board[0][piece.position.col];
-      if (towerColor === piece.color) {
-        return 'white';
-      }
+      return 'white';  // No color matching needed!
     }
   }
-  
   return null;
-};
+}
 
 // Make a move and update the game state - FIX: Check winner immediately after move
 export const makeMove = (gameState: GameState, from: Position, to: Position): GameState => {
@@ -148,23 +136,19 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
   // Get the color of the target cell for next move restriction
   const targetCellColor = board[to.row][to.col];
   
-  // ✅ FIX: Check for winner IMMEDIATELY after the move
-  const winner = checkWinner(updatedPieces, board);
-  
-  // If there's a winner, don't switch players - game is over
-  if (winner) {
-    return {
-      ...gameState,
-      pieces: updatedPieces,
-      currentPlayer: currentPlayer, // Keep same player
-      // selectedPiece: null,
-      // lastMovedPieceColor: targetCellColor,
-      winner // Set winner
-    };
-  }
-  
-  // No winner yet, switch players
-  const nextPlayer: Player = currentPlayer === 'black' ? 'white' : 'black';
+const winner = checkWinner(updatedPieces, board);
+
+if (winner) {
+  return {
+    ...gameState,
+    pieces: updatedPieces,
+    currentPlayer: currentPlayer,  // Keep same player!
+    winner
+  };
+}
+
+// Only switch if no winner
+const nextPlayer = currentPlayer === 'black' ? 'white' : 'black';
   
   return {
     ...gameState,
