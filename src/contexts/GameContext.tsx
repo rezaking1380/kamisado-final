@@ -339,7 +339,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         !state.winner &&
         !isComputing
       ) {
-        console.log("AI should make a move now");
         handleAIMove();
       }
     }, 500);

@@ -448,7 +448,6 @@ export const useAI = (
           try {
             // Clear transposition table if it gets too large (memory management)
             if (transpositionTableRef.current.size > 100000) {
-              console.log('Clearing transposition table (size limit reached)');
               transpositionTableRef.current.clear();
             }
 
@@ -467,15 +466,6 @@ export const useAI = (
             const endTime = performance.now();
             setLastComputationTime(endTime - startTime);
             setPositionsEvaluated(transpositionTableRef.current.size);
-
-            console.log(`AI Move Computed:`, {
-              depth: config.searchDepth,
-              time: `${(endTime - startTime).toFixed(2)}ms`,
-              score: result.score,
-              tableSize: transpositionTableRef.current.size,
-              move: result.move,
-            });
-
             resolve(result.move || validMoves[0]);
           } catch (error) {
             console.error('AI computation error:', error);
@@ -493,7 +483,6 @@ export const useAI = (
       return bestMove;
     } catch (error) {
       if (error instanceof Error && error.message === 'Computation aborted') {
-        console.log('AI computation was aborted');
         return null;
       }
       console.error('AI move generation error:', error);
@@ -519,7 +508,6 @@ export const useAI = (
    */
   const clearCache = useCallback(() => {
     transpositionTableRef.current.clear();
-    console.log('AI cache cleared');
   }, []);
 
   /**

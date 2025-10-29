@@ -15,7 +15,6 @@ import { BookOpen } from 'lucide-react';
 const GuidesSection = () => {
   const [open, setOpen] = React.useState(false);
   const { t , language } = useLanguage();
-console.log(language)
   return (
     <>
       <Button

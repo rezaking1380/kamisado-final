@@ -20,7 +20,7 @@ const GameBoard = () => {
     lastMovedPieceColor,
     gameStarted,
   } = state;
-  
+
   // Handle cell click
   const handleCellClick = (position: Position) => {
     // If no piece is selected, do nothing (cell clicks only matter when moving)
@@ -61,12 +61,15 @@ const GameBoard = () => {
     // Otherwise, all of current player's pieces could potentially be moved
     return true;
   };
-
   return (
-    <div className={`w-full max-w-xl mx-auto ${!gameStarted && "pointer-events-none"}` }>
+    <div
+      className={`w-full max-w-xl mx-auto ${
+        !gameStarted && "pointer-events-none"
+      }`}
+    >
       <div
         className={cn(
-          "grid grid-cols-8 lg:gap-2 md:gap-1 border-2 rounded-lg overflow-hidden",
+          "grid grid-cols-8 lg:gap-2 border-2 rounded-lg overflow-hidden gap-1",
           "shadow-xl transition-all duration-500 bg-gradient-to-br from-slate-50 to-slate-200",
           "dark:from-slate-900 dark:to-slate-800 animate-fade-in"
         )}
@@ -103,7 +106,9 @@ const GameBoard = () => {
                   <GamePiece
                     piece={piece}
                     isSelected={selectedPiece?.id === piece.id}
-                    onClick={() => selectPiece(piece)}
+                    onClick={() => {
+                      selectPiece(piece)
+                    }}
                     highlight={shouldHighlightPiece(piece.id)}
                   />
                 )}
