@@ -6,6 +6,22 @@ import { motion } from "framer-motion";
 import { ArrowRight, RefreshCcw, Undo, Redo, Bot, User } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import GuidesSection from "./GuidesSection";
+import {
+  easyConfig,
+  expertConfig,
+  hardConfig,
+  mediumConfig,
+} from "@/utils/DifficultyConfiguration";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Player } from "@/types/game";
 
 const GameInfo = () => {
   const {
@@ -18,9 +34,18 @@ const GameInfo = () => {
     canRedo,
     isAIThinking,
     toggleAI,
+    selectDifficulty,
+    selectPlayer,
   } = useGame();
   const { t, language } = useLanguage();
-  const { currentPlayer, winner, lastMovedPieceColor, gameStarted } = state;
+  const {
+    currentPlayer,
+    winner,
+    lastMovedPieceColor,
+    gameStarted,
+    difficulty,
+    player,
+  } = state;
 
   const colorNames = {
     orange: "Orange",
@@ -33,6 +58,24 @@ const GameInfo = () => {
     brown: "Brown",
   };
 
+  const difficultyList = [
+    {
+      name: t.difficulty.easy,
+      config: easyConfig,
+    },
+    {
+      name: t.difficulty.medium,
+      config: mediumConfig,
+    },
+    {
+      name: t.difficulty.hard,
+      config: hardConfig,
+    },
+    {
+      name: t.difficulty.expert,
+      config: expertConfig,
+    },
+  ];
   return (
     <div className="w-full max-w-xl mx-auto my-6 glass-panel p-2 lg:p-4 animate-slide-up">
       <div
@@ -56,13 +99,84 @@ const GameInfo = () => {
       </div>
 
       {!gameStarted ? (
-        <div className="text-center p-4">
-          <h3 className="text-xl font-medium mb-4">{t.gameInfo.welcome}</h3>
-          <p className="mb-6 text-muted-foreground">{t.gameInfo.subtitle}</p>
-          <Button onClick={startGame} className="animate-pulse-subtle">
-            {t.gameInfo.startGame}
-          </Button>
-        </div>
+        <>
+          <div className="text-center p-4">
+            <h3 className="text-xl font-medium mb-4">{t.gameInfo.welcome}</h3>
+            <p className="mb-6 text-muted-foreground">{t.gameInfo.subtitle}</p>
+            <div className=" flex justify-center gap-3">
+              <Button
+                onClick={startGame}
+                disabled={!difficulty && state.aiEnabled}
+                className="animate-pulse-subtle disabled:bg-muted-foreground "
+              >
+                {t.gameInfo.startGame}
+              </Button>
+              <Button
+                variant={state.aiEnabled ? "default" : "outline"}
+                size="sm"
+                onClick={toggleAI}
+                className={cn(
+                  isAIThinking && "animate-pulse",
+                  "flex items-center gap-1"
+                )}
+              >
+                {state.aiEnabled ? (
+                  <Bot className="h-4 w-4" />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
+                {state.aiEnabled ? "AI On" : "AI Off"}
+              </Button>
+              {state.aiEnabled && (
+                <Select
+                  onValueChange={(value) => {
+                    const selectedDifficulty = difficultyList.find(
+                      (d) => d.config.searchDepth.toString() === value
+                    );
+                    if (selectedDifficulty) {
+                      selectDifficulty(selectedDifficulty.config);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder={t.difficulty.select} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {difficultyList.map((difficulty) => (
+                      <SelectItem
+                        key={difficulty.config.searchDepth}
+                        value={difficulty.config.searchDepth.toString()}
+                      >
+                        {difficulty.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select
+                onValueChange={(value) => {
+                  selectPlayer(value as Player);
+                  console.log(state,value)
+                }}
+                defaultValue={player}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder={t.gameInfo.selectPlayer} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="black">
+                      {t.gameInfo.black}
+                    </SelectItem>
+                    <SelectItem value="white">
+                      {t.gameInfo.white}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </>
       ) : winner ? (
         <motion.div
           className="text-center p-4 animate-scale-in"
@@ -138,7 +252,7 @@ const GameInfo = () => {
             )}
           </div>
 
-          <div className="flex justify-center gap-2 mt-2">
+          <div className="flex justify-center flex-wrap gap-2 mt-2">
             <Button
               variant="outline"
               size="sm"
@@ -156,22 +270,6 @@ const GameInfo = () => {
             >
               <Redo className="h-4 w-4 mr-1" />
               Redo
-            </Button>
-            <Button
-              variant={state.aiEnabled ? "default" : "outline"}
-              size="sm"
-              onClick={toggleAI}
-              className={cn(
-                isAIThinking && "animate-pulse",
-                "flex items-center gap-1"
-              )}
-            >
-              {state.aiEnabled ? (
-                <Bot className="h-4 w-4" />
-              ) : (
-                <User className="h-4 w-4" />
-              )}
-              {state.aiEnabled ? "AI On" : "AI Off"}
             </Button>
           </div>
         </>

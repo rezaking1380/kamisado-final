@@ -14,6 +14,7 @@ import {
   Position,
   Move,
   Player,
+  DifficultyConfig,
 } from "@/types/game";
 import {
   initialGameState,
@@ -31,7 +32,7 @@ export type GameHistoryState = GameState & {
 };
 
 interface GameContextType {
-  state: GameState & { aiEnabled: boolean };
+  state: GameState & { aiEnabled: boolean; difficulty: DifficultyConfig };
   selectPiece: (piece: Piece) => void;
   deselectPiece: () => void;
   movePiece: (move: Move) => void;
@@ -45,6 +46,8 @@ interface GameContextType {
   canRedo: boolean;
   isAIThinking: boolean;
   toggleAI: () => void;
+  selectDifficulty: (difficulty: DifficultyConfig) => void;
+  selectPlayer: (player: Player) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -212,16 +215,26 @@ const gameReducer = (
         aiEnabled: !state.aiEnabled,
       };
 
+    case "SELECT_DIFFICULTY":
+      return {
+        ...state,
+        difficulty: action.difficulty,
+      };
+
+    case "SELECT_PLAYER":
+      return {
+        ...state,
+        player: action.player,
+        currentPlayer: action.player,
+      };
+
     default:
       return state;
   }
 };
-
 interface GameProviderProps {
   children: ReactNode;
 }
-
-const aiPlayer: Player = "black";
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const initialHistoryState: GameHistoryState = {
@@ -229,16 +242,30 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     history: [],
     future: [],
     aiEnabled: true,
+    player: "black"
   };
 
   const [state, dispatch] = useReducer(gameReducer, initialHistoryState);
   const aiMoveInProgressRef = useRef(false);
-
-  const { getAIMove, isComputing } = useAI(state as GameState, aiPlayer, 4);
+  const aiPlayer: Player = state.player === "white" ? "black" : "white";
+  const { getAIMove, isComputing } = useAI(
+    state as GameState,
+    aiPlayer,
+    state.difficulty?.searchDepth ?? 4,
+    state.difficulty
+  );
 
   // Action dispatchers
   const selectPiece = useCallback((piece: Piece) => {
     dispatch({ type: "SELECT_PIECE", piece });
+  }, []);
+
+  const selectDifficulty = useCallback((difficulty: DifficultyConfig) => {
+    dispatch({ type: "SELECT_DIFFICULTY", difficulty });
+  }, []);
+
+  const selectPlayer = useCallback((player: Player) => {
+    dispatch({ type: "SELECT_PLAYER", player });
   }, []);
 
   const deselectPiece = useCallback(() => {
@@ -284,7 +311,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     [state]
   );
 
-    const handleAIMove = useCallback(async () => {
+  const handleAIMove = useCallback(async () => {
     if (!state.gameStarted || state.winner) return;
 
     const move = await getAIMove();
@@ -313,7 +340,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     //   try {
     //     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    //     if (!mounted || state.winner) return; 
+    //     if (!mounted || state.winner) return;
 
     //     const move = await getAIMove();
 
@@ -334,7 +361,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     const timer = setTimeout(() => {
       if (
         state.aiEnabled && // Only make moves if AI is enabled
-        state.currentPlayer === aiPlayer &&
+        state.player !== aiPlayer &&
         state.gameStarted &&
         !state.winner &&
         !isComputing
@@ -342,7 +369,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         handleAIMove();
       }
     }, 500);
-    
+
     return () => clearTimeout(timer);
 
     // return () => {
@@ -362,7 +389,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   return (
     <GameContext.Provider
       value={{
-        state: state as GameState & { aiEnabled: boolean },
+        state: state as GameState & {
+          aiEnabled: boolean;
+          difficulty: DifficultyConfig;
+          player?: Player;
+        },
         selectPiece,
         deselectPiece,
         movePiece,
@@ -376,6 +407,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         canRedo: state.future.length > 0,
         isAIThinking: isComputing,
         toggleAI,
+        selectDifficulty,
+        selectPlayer,
       }}
     >
       {children}
