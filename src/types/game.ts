@@ -1,6 +1,14 @@
-export type Color = 'orange' | 'blue' | 'purple' | 'pink' | 'yellow' | 'red' | 'green' | 'brown';
+export type Color =
+  | "orange"
+  | "blue"
+  | "purple"
+  | "pink"
+  | "yellow"
+  | "red"
+  | "green"
+  | "brown";
 
-export type Player = 'black' | 'white';
+export type Player = "black" | "white";
 
 export interface Position {
   readonly row: number;
@@ -23,6 +31,8 @@ export interface GameState {
   winner: Player | null;
   gameStarted: boolean;
   aiEnabled?: boolean;
+  difficulty?: DifficultyConfig;
+  player?: Player;
 }
 
 export interface Move {
@@ -31,41 +41,56 @@ export interface Move {
 }
 
 export type GameAction =
-  | { type: 'SELECT_PIECE'; piece: Piece }
-  | { type: 'DESELECT_PIECE' }
-  | { type: 'MOVE_PIECE'; move: Move }
-  | { type: 'RESET_GAME' }
-  | { type: 'START_GAME' }
-  | { type: 'UNDO' }
-  | { type: 'REDO' }
-  | { type: 'TOGGLE_AI' };
+  | { type: "SELECT_PIECE"; piece: Piece }
+  | { type: "DESELECT_PIECE" }
+  | { type: "MOVE_PIECE"; move: Move }
+  | { type: "RESET_GAME" }
+  | { type: "START_GAME" }
+  | { type: "UNDO" }
+  | { type: "REDO" }
+  | { type: "TOGGLE_AI" }
+  | { type: "SELECT_DIFFICULTY"; difficulty: DifficultyConfig }
+  | { type: "SELECT_PLAYER"; player: Player };
 
 // Type guards
 export const isPosition = (obj: any): obj is Position => {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
-    typeof obj.row === 'number' &&
-    typeof obj.col === 'number'
+    typeof obj.row === "number" &&
+    typeof obj.col === "number"
   );
 };
 
 export const isPiece = (obj: any): obj is Piece => {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
-    typeof obj.id === 'string' &&
-    typeof obj.color === 'string' &&
-    typeof obj.player === 'string' &&
+    typeof obj.id === "string" &&
+    typeof obj.color === "string" &&
+    typeof obj.player === "string" &&
     isPosition(obj.position)
   );
 };
 
 export const isMove = (obj: any): obj is Move => {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
     isPosition(obj.from) &&
     isPosition(obj.to)
   );
+};
+
+export type Difficulty = "easy" | "medium" | "hard" | "expert";
+
+export interface DifficultyConfig {
+  searchDepth: number,
+  evaluationWeights: {
+    goalDistance: number,
+    nearGoalBonus: number,
+    mobility: number,
+    centerControl: number,
+    forwardProgress: number,
+  },
 };

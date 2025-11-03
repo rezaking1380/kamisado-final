@@ -23,6 +23,9 @@ export interface Translation {
     playAgain: string;
     turn: string;
     move: string;
+    selectPlayer: string;
+    black: string;
+    white: string;
   };
   footer: {
     designed: string;
@@ -65,6 +68,9 @@ export const translations: Record<Language, Translation> = {
       playAgain: "Play Again",
       turn: "Turn",
       move: "Move",
+      selectPlayer: "Select Player",
+      black: "Black",
+      white: "White",
     },
     footer: {
       designed: "Designed with precision and attention to detail",
@@ -105,6 +111,9 @@ export const translations: Record<Language, Translation> = {
       playAgain: "بازی مجدد",
       turn: "نوبت",
       move: "حرکت",
+      selectPlayer: "انتخاب بازیکن",
+      black: "سیاه",
+      white: "سفید",
     },
     footer: {
       designed: "طراحی شده با دقت و توجه به جزئیات",
