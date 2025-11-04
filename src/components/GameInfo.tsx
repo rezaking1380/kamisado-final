@@ -103,7 +103,7 @@ const GameInfo = () => {
           <div className="text-center p-4">
             <h3 className="text-xl font-medium mb-4">{t.gameInfo.welcome}</h3>
             <p className="mb-6 text-muted-foreground">{t.gameInfo.subtitle}</p>
-            <div className=" flex justify-center gap-3">
+            <div className=" flex items-center flex-wrap justify-center gap-3">
               <Button
                 onClick={startGame}
                 disabled={!difficulty && state.aiEnabled}
