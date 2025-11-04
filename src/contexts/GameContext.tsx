@@ -22,6 +22,7 @@ import {
   makeMove,
   isValidMove,
   checkBlocked,
+  getPieceAtPosition,
 } from "@/utils/gameUtils";
 import { useAI } from "@/hooks/useAI";
 
@@ -59,22 +60,18 @@ const gameReducer = (
 ): GameHistoryState => {
   switch (action.type) {
     case "SELECT_PIECE": {
-      // Can't select pieces if game is over
       if (state.winner) {
         return state;
       }
 
-      // Prevent re-selecting the same piece
       if (state.selectedPiece?.id === action.piece.id) {
         return state;
       }
 
-      // Only allow selecting current player's pieces
       if (action.piece.player !== state.currentPlayer) {
         return state;
       }
 
-      // Check color restriction
       if (state.lastMovedPieceColor !== null) {
         const mustMovePieces = state.pieces.filter(
           (p) =>
@@ -103,11 +100,10 @@ const gameReducer = (
       };
 
     case "MOVE_PIECE": {
-      // Can't move if game is over
       if (state.winner) {
         return state;
       }
-      // Validate move
+
       if (
         !state.selectedPiece ||
         !isValidMove(state, action.move.from, action.move.to)
@@ -115,7 +111,6 @@ const gameReducer = (
         return state;
       }
 
-      // Save current state to history (without selection)
       const stateForHistory: GameState = {
         board: state.board,
         pieces: state.pieces,
@@ -126,10 +121,8 @@ const gameReducer = (
         gameStarted: state.gameStarted,
       };
 
-      // ✅ FIX: Make the move (winner is determined inside makeMove now)
       const newStateBase = makeMove(state, action.move.from, action.move.to);
 
-      // Only check for blocked if there's no winner yet
       let finalState = newStateBase;
       if (!newStateBase.winner) {
         const blocked = checkBlocked(newStateBase);
@@ -232,6 +225,7 @@ const gameReducer = (
       return state;
   }
 };
+
 interface GameProviderProps {
   children: ReactNode;
 }
@@ -242,7 +236,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     history: [],
     future: [],
     aiEnabled: true,
-    player: "black"
+    player: "black",
   };
 
   const [state, dispatch] = useReducer(gameReducer, initialHistoryState);
@@ -255,7 +249,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     state.difficulty
   );
 
-  // Action dispatchers
   const selectPiece = useCallback((piece: Piece) => {
     dispatch({ type: "SELECT_PIECE", piece });
   }, []);
@@ -311,79 +304,79 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     [state]
   );
 
+  // ✅ تابع اصلاح شده برای حرکت خودکار AI
   const handleAIMove = useCallback(async () => {
-    if (!state.gameStarted || state.winner) return;
-
-    const move = await getAIMove();
-    if (move) {
-      movePiece(move);
+    if (
+      !state.gameStarted ||
+      state.winner ||
+      aiMoveInProgressRef.current ||
+      isComputing
+    ) {
+      return;
     }
-  }, [getAIMove, state.gameStarted, state.winner, movePiece]);
 
-  // AI move handling with proper dependency management
-  useEffect(() => {
-    // let mounted = true;
+    aiMoveInProgressRef.current = true;
 
-    // const makeAIMove = async () => {
-    //   if (
-    //     state.aiEnabled && // Only make moves if AI is enabled
-    //     state.currentPlayer === aiPlayer &&
-    //     state.gameStarted &&
-    //     !state.winner &&
-    //     !isComputing
-    //   ) {
-    //     return;
-    //   }
+    try {
+      // کمی صبر می‌کنیم تا UI آپدیت شود
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-    //   aiMoveInProgressRef.current = true;
-
-    //   try {
-    //     await new Promise((resolve) => setTimeout(resolve, 300));
-
-    //     if (!mounted || state.winner) return;
-
-    //     const move = await getAIMove();
-
-    //     if (mounted && move && !state.winner) {
-    //       movePiece(move);
-    //     }
-    //   } catch (error) {
-    //     console.error("AI move error:", error);
-    //   } finally {
-    //     if (mounted) {
-    //       aiMoveInProgressRef.current = false;
-    //     }
-    //   }
-    // };
-
-    // makeAIMove();
-
-    const timer = setTimeout(() => {
-      if (
-        state.aiEnabled && // Only make moves if AI is enabled
-        state.player !== aiPlayer &&
-        state.gameStarted &&
-        !state.winner &&
-        !isComputing
-      ) {
-        handleAIMove();
+      if (state.winner) {
+        aiMoveInProgressRef.current = false;
+        return;
       }
-    }, 500);
 
-    return () => clearTimeout(timer);
+      // دریافت حرکت از AI
+      const move = await getAIMove();
 
-    // return () => {
-    //   mounted = false;
-    // };
+      if (!move || state.winner) {
+        aiMoveInProgressRef.current = false;
+        return;
+      }
+
+      // ✅ انتخاب خودکار مهره قبل از حرکت
+      const pieceToMove = getPieceAtPosition(state.pieces, move.from);
+      if (pieceToMove) {
+        // ابتدا مهره را انتخاب می‌کنیم
+        dispatch({ type: "SELECT_PIECE", piece: pieceToMove });
+        
+        // کمی صبر می‌کنیم تا انتخاب ثبت شود
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        
+        // سپس حرکت را انجام می‌دهیم
+        dispatch({ type: "MOVE_PIECE", move });
+      }
+    } catch (error) {
+      console.error("AI move error:", error);
+    } finally {
+      aiMoveInProgressRef.current = false;
+    }
+  }, [state, getAIMove, isComputing]);
+
+  useEffect(() => {
+    if (
+      state.aiEnabled &&
+      state.currentPlayer === aiPlayer &&
+      state.gameStarted &&
+      !state.winner &&
+      !isComputing &&
+      !aiMoveInProgressRef.current
+    ) {
+      const timer = setTimeout(() => {
+        handleAIMove();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
   }, [
+    state.aiEnabled,
     state.currentPlayer,
     state.gameStarted,
-    state.winner, // ⭐ Must be in dependencies
-    state.aiEnabled,
+    state.winner,
     state.pieces.length,
     isComputing,
-    getAIMove,
-    movePiece,
+    aiPlayer,
+    handleAIMove,
   ]);
 
   return (
@@ -416,7 +409,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   );
 };
 
-// Custom hook to use the game context
 export const useGame = (): GameContextType => {
   const context = useContext(GameContext);
   if (context === undefined) {
