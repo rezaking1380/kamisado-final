@@ -17,7 +17,6 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
@@ -76,6 +75,7 @@ const GameInfo = () => {
       config: expertConfig,
     },
   ];
+  
   return (
     <div className="w-full max-w-xl mx-auto my-6 glass-panel p-2 lg:p-4 animate-slide-up">
       <div
@@ -103,7 +103,7 @@ const GameInfo = () => {
           <div className="text-center p-4">
             <h3 className="text-xl font-medium mb-4">{t.gameInfo.welcome}</h3>
             <p className="mb-6 text-muted-foreground">{t.gameInfo.subtitle}</p>
-            <div className=" flex items-center flex-wrap justify-center gap-3">
+            <div className=" flex justify-center items-center flex-wrap gap-3">
               <Button
                 onClick={startGame}
                 disabled={!difficulty && state.aiEnabled}
@@ -156,7 +156,6 @@ const GameInfo = () => {
               <Select
                 onValueChange={(value) => {
                   selectPlayer(value as Player);
-                  console.log(state,value)
                 }}
                 defaultValue={player}
               >

@@ -103,27 +103,45 @@ export const getValidMoves = (piece: Piece, gameState: GameState): Position[] =>
   return validMoves;
 };
 
-// Check if a player has won
+// ✅ تابع صحیح طبق قوانین واقعی Kamisado
+// قانون: فقط باید به ردیف حریف برسی (بدون چک رنگ)
 export const checkWinner = (pieces: Piece[], board: Color[][]): Player | null => {
+  console.log('=== CHECK WINNER ===');
+  
   for (const piece of pieces) {
+    // ✅ برد Black: اگر به ردیف 7 (خانه White) برسد
     if (piece.player === 'black' && piece.position.row === 7) {
-      return 'black';  // No color matching needed!
+      console.log(`✅ BLACK WINS! Piece ${piece.id} (${piece.color}) reached row 7`);
+      return 'black';
     }
+    
+    // ✅ برد White: اگر به ردیف 0 (خانه Black) برسد
     if (piece.player === 'white' && piece.position.row === 0) {
-      return 'white';  // No color matching needed!
+      console.log(`✅ WHITE WINS! Piece ${piece.id} (${piece.color}) reached row 0`);
+      return 'white';
     }
   }
+  
+  console.log('No winner yet');
   return null;
 }
 
-// Make a move and update the game state - FIX: Check winner immediately after move
+// ✅ تابع اصلاح شده makeMove - با لاگ دقیق
 export const makeMove = (gameState: GameState, from: Position, to: Position): GameState => {
   const { pieces, currentPlayer, board } = gameState;
   
+  console.log('=== MAKE MOVE ===');
+  console.log(`From: row ${from.row}, col ${from.col}`);
+  console.log(`To: row ${to.row}, col ${to.col}`);
+  console.log(`Current player: ${currentPlayer}`);
+  
   const piece = getPieceAtPosition(pieces, from);
   if (!piece || piece.player !== currentPlayer) {
+    console.log('❌ Invalid move: no piece or wrong player');
     return gameState;
   }
+  
+  console.log(`Moving piece: ${piece.id}, color: ${piece.color}`);
   
   const pieceIndex = pieces.findIndex(p => p.id === piece.id);
   if (pieceIndex === -1) return gameState;
@@ -135,20 +153,25 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
   
   // Get the color of the target cell for next move restriction
   const targetCellColor = board[to.row][to.col];
+  console.log(`Target cell color: ${targetCellColor}`);
   
-const winner = checkWinner(updatedPieces, board);
+  // ✅ چک کردن برنده بعد از حرکت
+  const winner = checkWinner(updatedPieces, board);
 
-if (winner) {
-  return {
-    ...gameState,
-    pieces: updatedPieces,
-    currentPlayer: currentPlayer,  // Keep same player!
-    winner
-  };
-}
+  if (winner) {
+    console.log(`🏆 Winner detected: ${winner}`);
+    return {
+      ...gameState,
+      pieces: updatedPieces,
+      currentPlayer: currentPlayer,
+      winner,
+      selectedPiece: null,
+    };
+  }
 
-// Only switch if no winner
-const nextPlayer = currentPlayer === 'black' ? 'white' : 'black';
+  // اگر برنده‌ای نیست، نوبت عوض می‌شود
+  const nextPlayer = currentPlayer === 'black' ? 'white' : 'black';
+  console.log(`Next player: ${nextPlayer}`);
   
   return {
     ...gameState,
@@ -162,32 +185,26 @@ const nextPlayer = currentPlayer === 'black' ? 'white' : 'black';
 
 // Check if a piece can be moved (considering color restrictions)
 export const canMovePiece = (piece: Piece, gameState: GameState): boolean => {
-  // Must be current player's piece
   if (piece.player !== gameState.currentPlayer) {
     return false;
   }
   
-  // If there's a winner, no pieces can move
   if (gameState.winner) {
     return false;
   }
   
-  // If no color restriction, any piece can move
   if (gameState.lastMovedPieceColor === null) {
     return true;
   }
   
-  // Check if there are pieces of the required color
   const mustMovePieces = gameState.pieces.filter(
     p => p.color === gameState.lastMovedPieceColor && p.player === gameState.currentPlayer
   );
   
-  // If no pieces of required color exist, any piece can move
   if (mustMovePieces.length === 0) {
     return true;
   }
   
-  // Otherwise, only pieces of the required color can move
   return piece.color === gameState.lastMovedPieceColor;
 };
 
@@ -205,7 +222,6 @@ export const isValidMove = (gameState: GameState, from: Position, to: Position):
 
 // Get all valid moves for current player
 export const getAllValidMoves = (gameState: GameState): Move[] => {
-  // If there's a winner, no moves are valid
   if (gameState.winner) {
     return [];
   }
@@ -244,7 +260,6 @@ export const checkBlocked = (gameState: GameState): Player | null => {
   }
   
   if (!hasValidMoves(gameState)) {
-    // If current player has no moves, the other player wins
     return gameState.currentPlayer === 'black' ? 'white' : 'black';
   }
   

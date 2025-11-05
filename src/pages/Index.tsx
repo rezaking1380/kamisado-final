@@ -3,6 +3,7 @@ import { GameProvider } from '@/contexts/GameContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import GameBoard from '@/components/GameBoard';
 import GameInfo from '@/components/GameInfo';
+import DebugPanel from '@/components/DebugPanel';
 
 const Index = () => {
   return (
@@ -12,6 +13,7 @@ const Index = () => {
           <div className="lg:container max-w-screen-md mx-auto">
             <GameInfo />
             <GameBoard />
+             <DebugPanel />
           </div>
         </div>
       </GameProvider>

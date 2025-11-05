@@ -100,7 +100,10 @@ const gameReducer = (
       };
 
     case "MOVE_PIECE": {
+      console.log('🎮 MOVE_PIECE action triggered');
+      
       if (state.winner) {
+        console.log('❌ Game already has a winner, ignoring move');
         return state;
       }
 
@@ -108,6 +111,7 @@ const gameReducer = (
         !state.selectedPiece ||
         !isValidMove(state, action.move.from, action.move.to)
       ) {
+        console.log('❌ Invalid move or no piece selected');
         return state;
       }
 
@@ -121,12 +125,18 @@ const gameReducer = (
         gameStarted: state.gameStarted,
       };
 
+      // ✅ makeMove already checks for winner inside
       const newStateBase = makeMove(state, action.move.from, action.move.to);
+      console.log('After makeMove, winner:', newStateBase.winner);
 
       let finalState = newStateBase;
+      
+      // ✅ فقط اگر برنده‌ای نیست، بررسی می‌کنیم که آیا بازیکن blocked شده
       if (!newStateBase.winner) {
         const blocked = checkBlocked(newStateBase);
+        console.log('Check blocked:', blocked);
         if (blocked) {
+          console.log('🚫 Player is blocked, setting winner to:', blocked);
           finalState = { ...newStateBase, winner: blocked };
         }
       }
@@ -353,25 +363,29 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }
   }, [state, getAIMove, isComputing]);
 
+  // ✅ Effect اصلاح شده - فقط وقتی بازی شروع شده باشد AI حرکت می‌کند
   useEffect(() => {
+    // ✅ مطمئن می‌شویم که بازی شروع شده باشد
     if (
-      state.aiEnabled &&
-      state.currentPlayer === aiPlayer &&
-      state.gameStarted &&
-      !state.winner &&
-      !isComputing &&
-      !aiMoveInProgressRef.current
+      !state.gameStarted ||  // اگر بازی شروع نشده، هیچ کاری نکن
+      !state.aiEnabled ||
+      state.currentPlayer !== aiPlayer ||
+      state.winner ||
+      isComputing ||
+      aiMoveInProgressRef.current
     ) {
-      const timer = setTimeout(() => {
-        handleAIMove();
-      }, 500);
-
-      return () => clearTimeout(timer);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      handleAIMove();
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [
+    state.gameStarted,  // ✅ این را اضافه کردیم
     state.aiEnabled,
     state.currentPlayer,
-    state.gameStarted,
     state.winner,
     state.pieces.length,
     isComputing,
