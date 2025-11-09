@@ -13,7 +13,7 @@ const Index = () => {
           <div className="lg:container max-w-screen-md mx-auto">
             <GameInfo />
             <GameBoard />
-             <DebugPanel />
+             {/* <DebugPanel /> */}
           </div>
         </div>
       </GameProvider>
