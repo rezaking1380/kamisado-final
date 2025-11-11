@@ -21,7 +21,6 @@ import {
   getValidMoves,
   makeMove,
   isValidMove,
-  checkBlocked,
   getPieceAtPosition,
 } from "@/utils/gameUtils";
 import { useAI } from "@/hooks/useAI";
@@ -100,20 +99,24 @@ const gameReducer = (
       };
 
     case "MOVE_PIECE": {
-      console.log('🎮 MOVE_PIECE action triggered');
+      console.log('🎮 MOVE_PIECE action in reducer');
       
       if (state.winner) {
-        console.log('❌ Game already has a winner, ignoring move');
+        console.log('❌ Game already has winner:', state.winner);
         return state;
       }
 
-      if (
-        !state.selectedPiece ||
-        !isValidMove(state, action.move.from, action.move.to)
-      ) {
-        console.log('❌ Invalid move or no piece selected');
+      if (!state.selectedPiece) {
+        console.log('❌ No piece selected');
         return state;
       }
+
+      if (!isValidMove(state, action.move.from, action.move.to)) {
+        console.log('❌ Invalid move');
+        return state;
+      }
+
+      console.log('✅ Valid move, proceeding...');
 
       const stateForHistory: GameState = {
         board: state.board,
@@ -125,24 +128,12 @@ const gameReducer = (
         gameStarted: state.gameStarted,
       };
 
-      // ✅ makeMove already checks for winner inside
+      // ✅ makeMove checks for winner internally
       const newStateBase = makeMove(state, action.move.from, action.move.to);
-      console.log('After makeMove, winner:', newStateBase.winner);
-
-      let finalState = newStateBase;
-      
-      // ✅ فقط اگر برنده‌ای نیست، بررسی می‌کنیم که آیا بازیکن blocked شده
-      if (!newStateBase.winner) {
-        const blocked = checkBlocked(newStateBase);
-        console.log('Check blocked:', blocked);
-        if (blocked) {
-          console.log('🚫 Player is blocked, setting winner to:', blocked);
-          finalState = { ...newStateBase, winner: blocked };
-        }
-      }
+      console.log('After makeMove - winner:', newStateBase.winner);
 
       return {
-        ...finalState,
+        ...newStateBase,
         history: [...state.history, stateForHistory],
         future: [],
         aiEnabled: state.aiEnabled,
@@ -328,7 +319,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     aiMoveInProgressRef.current = true;
 
     try {
-      // کمی صبر می‌کنیم تا UI آپدیت شود
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       if (state.winner) {
@@ -336,7 +326,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         return;
       }
 
-      // دریافت حرکت از AI
       const move = await getAIMove();
 
       if (!move || state.winner) {
@@ -347,13 +336,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       // ✅ انتخاب خودکار مهره قبل از حرکت
       const pieceToMove = getPieceAtPosition(state.pieces, move.from);
       if (pieceToMove) {
-        // ابتدا مهره را انتخاب می‌کنیم
         dispatch({ type: "SELECT_PIECE", piece: pieceToMove });
-        
-        // کمی صبر می‌کنیم تا انتخاب ثبت شود
         await new Promise((resolve) => setTimeout(resolve, 100));
-        
-        // سپس حرکت را انجام می‌دهیم
         dispatch({ type: "MOVE_PIECE", move });
       }
     } catch (error) {
@@ -363,11 +347,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }
   }, [state, getAIMove, isComputing]);
 
-  // ✅ Effect اصلاح شده - فقط وقتی بازی شروع شده باشد AI حرکت می‌کند
+  // ✅ Effect برای فراخوانی AI
   useEffect(() => {
-    // ✅ مطمئن می‌شویم که بازی شروع شده باشد
     if (
-      !state.gameStarted ||  // اگر بازی شروع نشده، هیچ کاری نکن
+      !state.gameStarted ||
       !state.aiEnabled ||
       state.currentPlayer !== aiPlayer ||
       state.winner ||
@@ -383,7 +366,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     return () => clearTimeout(timer);
   }, [
-    state.gameStarted,  // ✅ این را اضافه کردیم
+    state.gameStarted,
     state.aiEnabled,
     state.currentPlayer,
     state.winner,

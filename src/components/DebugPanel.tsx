@@ -27,7 +27,7 @@ const DebugPanel = () => {
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Winner:</span>
-          <span className={state.winner ? 'text-green-400 font-bold' : 'text-gray-500'}>
+          <span className={state.winner ? 'text-red-400 font-bold animate-pulse' : 'text-gray-500'}>
             {state.winner || 'None'}
           </span>
         </div>
@@ -41,22 +41,25 @@ const DebugPanel = () => {
             {state.aiEnabled ? '✅ ON' : '❌ OFF'}
           </span>
         </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Move Count:</span>
+          <span className="text-blue-400">{state.history?.length || 0}</span>
+        </div>
       </div>
 
       {piecesAtGoal.length > 0 && (
         <div className="mt-3 border-t border-white/20 pt-2">
-          <h4 className="font-bold mb-2 text-yellow-400">⭐ Pieces at Goal Row:</h4>
+          <h4 className="font-bold mb-2 text-red-400 animate-pulse">⭐ Pieces at Goal Row:</h4>
           <div className="text-xs text-green-300 mb-2">
             ✅ Rule: Any piece reaching opponent's home row WINS!
           </div>
           {piecesAtGoal.map(piece => {
             const goalRow = piece.player === 'black' ? 7 : 0;
             const cellColor = state.board[goalRow][piece.position.col];
-            const shouldWin = true; // طبق قوانین واقعی، فقط رسیدن به ردیف کافیست
             
             return (
-              <div key={piece.id} className="mb-2 p-2 bg-white/5 rounded border border-green-500/30">
-                <div className="text-blue-300 font-bold">{piece.id}</div>
+              <div key={piece.id} className="mb-2 p-2 bg-red-500/20 rounded border border-red-500/50">
+                <div className="text-yellow-300 font-bold">{piece.id} ({piece.player})</div>
                 <div className="grid grid-cols-2 gap-1 mt-1">
                   <span className="text-gray-400">Position:</span>
                   <span>[{piece.position.row}, {piece.position.col}]</span>
@@ -67,14 +70,24 @@ const DebugPanel = () => {
                   <span className="text-gray-400">Cell Color:</span>
                   <span className="text-purple-300">{cellColor}</span>
                   
-                  <span className="text-gray-400">Should Win:</span>
-                  <span className="text-green-400 font-bold">
-                    ✅ YES - At goal row!
+                  <span className="text-gray-400">Status:</span>
+                  <span className="text-red-400 font-bold">
+                    🏆 SHOULD WIN!
                   </span>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+      
+      {state.winner && piecesAtGoal.length === 0 && (
+        <div className="mt-3 border-t border-red-500/50 pt-2 bg-red-500/20 p-2 rounded">
+          <div className="text-red-400 font-bold">⚠️ WARNING:</div>
+          <div className="text-yellow-300 text-xs mt-1">
+            Winner declared but no piece at goal row!<br/>
+            This might be a bug or blocked situation.
+          </div>
         </div>
       )}
       

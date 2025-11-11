@@ -103,36 +103,34 @@ export const getValidMoves = (piece: Piece, gameState: GameState): Position[] =>
   return validMoves;
 };
 
-// ✅ تابع صحیح طبق قوانین واقعی Kamisado
-// قانون: فقط باید به ردیف حریف برسی (بدون چک رنگ)
+// ✅ این تابع فقط برای مواقع خاص است (مثلاً loading state از storage)
+// در جریان عادی بازی، checkWinner در makeMove صدا زده می‌شود
 export const checkWinner = (pieces: Piece[], board: Color[][]): Player | null => {
-  console.log('=== CHECK WINNER ===');
+  console.log('⚠️ checkWinner called directly (should only be in makeMove)');
   
   for (const piece of pieces) {
-    // ✅ برد Black: اگر به ردیف 7 (خانه White) برسد
+    // برد Black: اگر به ردیف 7 برسد
     if (piece.player === 'black' && piece.position.row === 7) {
-      console.log(`✅ BLACK WINS! Piece ${piece.id} (${piece.color}) reached row 7`);
+      console.log(`Black piece ${piece.id} at row 7 - potential winner`);
       return 'black';
     }
     
-    // ✅ برد White: اگر به ردیف 0 (خانه Black) برسد
+    // برد White: اگر به ردیف 0 برسد
     if (piece.player === 'white' && piece.position.row === 0) {
-      console.log(`✅ WHITE WINS! Piece ${piece.id} (${piece.color}) reached row 0`);
+      console.log(`White piece ${piece.id} at row 0 - potential winner`);
       return 'white';
     }
   }
   
-  console.log('No winner yet');
   return null;
 }
 
-// ✅ تابع اصلاح شده makeMove - با لاگ دقیق
+// ✅ تابع makeMove - فقط اینجا checkWinner صدا زده می‌شود
 export const makeMove = (gameState: GameState, from: Position, to: Position): GameState => {
   const { pieces, currentPlayer, board } = gameState;
   
   console.log('=== MAKE MOVE ===');
-  console.log(`From: row ${from.row}, col ${from.col}`);
-  console.log(`To: row ${to.row}, col ${to.col}`);
+  console.log(`From: [${from.row}, ${from.col}] -> To: [${to.row}, ${to.col}]`);
   console.log(`Current player: ${currentPlayer}`);
   
   const piece = getPieceAtPosition(pieces, from);
@@ -141,10 +139,17 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
     return gameState;
   }
   
-  console.log(`Moving piece: ${piece.id}, color: ${piece.color}`);
+  console.log(`Moving piece: ${piece.id}, color: ${piece.color}, player: ${piece.player}`);
   
   const pieceIndex = pieces.findIndex(p => p.id === piece.id);
   if (pieceIndex === -1) return gameState;
+  
+  // ✅ بررسی می‌کنیم که آیا از موقعیت اولیه حرکت کرده
+  const isMovingFromStart = 
+    (piece.player === 'black' && from.row === 0) ||
+    (piece.player === 'white' && from.row === 7);
+  
+  console.log(`Moving from start position: ${isMovingFromStart}`);
   
   // Create new pieces array with updated position
   const updatedPieces = pieces.map((p, idx) => 
@@ -155,11 +160,18 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
   const targetCellColor = board[to.row][to.col];
   console.log(`Target cell color: ${targetCellColor}`);
   
-  // ✅ چک کردن برنده بعد از حرکت
-  const winner = checkWinner(updatedPieces, board);
+  // ✅ فقط اگر به ردیف برد رسیده، چک می‌کنیم
+  let winner: Player | null = null;
+  
+  if (piece.player === 'black' && to.row === 7) {
+    console.log('🏆 BLACK reached row 7 - BLACK WINS!');
+    winner = 'black';
+  } else if (piece.player === 'white' && to.row === 0) {
+    console.log('🏆 WHITE reached row 0 - WHITE WINS!');
+    winner = 'white';
+  }
 
   if (winner) {
-    console.log(`🏆 Winner detected: ${winner}`);
     return {
       ...gameState,
       pieces: updatedPieces,
