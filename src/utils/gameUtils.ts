@@ -125,7 +125,7 @@ export const checkWinner = (pieces: Piece[], board: Color[][]): Player | null =>
   return null;
 }
 
-// ✅ تابع makeMove - فقط اینجا checkWinner صدا زده می‌شود
+// ✅ تابع makeMove - با چک کردن canMoveRequiredColor
 export const makeMove = (gameState: GameState, from: Position, to: Position): GameState => {
   const { pieces, currentPlayer, board } = gameState;
   
@@ -144,13 +144,6 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
   const pieceIndex = pieces.findIndex(p => p.id === piece.id);
   if (pieceIndex === -1) return gameState;
   
-  // ✅ بررسی می‌کنیم که آیا از موقعیت اولیه حرکت کرده
-  const isMovingFromStart = 
-    (piece.player === 'black' && from.row === 0) ||
-    (piece.player === 'white' && from.row === 7);
-  
-  console.log(`Moving from start position: ${isMovingFromStart}`);
-  
   // Create new pieces array with updated position
   const updatedPieces = pieces.map((p, idx) => 
     idx === pieceIndex ? { ...p, position: { ...to } } : p
@@ -160,7 +153,7 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
   const targetCellColor = board[to.row][to.col];
   console.log(`Target cell color: ${targetCellColor}`);
   
-  // ✅ فقط اگر به ردیف برد رسیده، چک می‌کنیم
+  // ✅ چک برد
   let winner: Player | null = null;
   
   if (piece.player === 'black' && to.row === 7) {
@@ -181,11 +174,11 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
     };
   }
 
-  // اگر برنده‌ای نیست، نوبت عوض می‌شود
+  // نوبت بعدی
   const nextPlayer = currentPlayer === 'black' ? 'white' : 'black';
-  console.log(`Next player: ${nextPlayer}`);
   
-  return {
+  // ✅ state موقت برای چک کردن
+  const tempNextState: GameState = {
     ...gameState,
     pieces: updatedPieces,
     currentPlayer: nextPlayer,
@@ -193,6 +186,26 @@ export const makeMove = (gameState: GameState, from: Position, to: Position): Ga
     lastMovedPieceColor: targetCellColor,
     winner: null
   };
+
+  // ✅ چک می‌کنیم که آیا بازیکن بعدی می‌تواند مهره با رنگ مورد نیاز را حرکت دهد
+  if (!canMoveRequiredColor(tempNextState)) {
+    console.log(`⚠️ Next player (${nextPlayer}) cannot move required color (${targetCellColor})`);
+    console.log('🔄 Skipping turn back to', currentPlayer);
+    
+    // نوبت را نگه می‌داریم اما lastMovedPieceColor را null می‌کنیم
+    return {
+      ...gameState,
+      pieces: updatedPieces,
+      currentPlayer: currentPlayer, // نوبت عوض نمی‌شود
+      selectedPiece: null,
+      lastMovedPieceColor: null, // رنگ را پاک می‌کنیم تا بازیکن فعلی هر مهره‌ای را حرکت دهد
+      winner: null
+    };
+  }
+
+  console.log(`Next player: ${nextPlayer}`);
+  
+  return tempNextState;
 };
 
 // Check if a piece can be moved (considering color restrictions)
@@ -213,10 +226,12 @@ export const canMovePiece = (piece: Piece, gameState: GameState): boolean => {
     p => p.color === gameState.lastMovedPieceColor && p.player === gameState.currentPlayer
   );
   
+  // ✅ اگر هیچ مهره‌ای با رنگ مورد نیاز وجود ندارد، هر مهره‌ای می‌تواند حرکت کند
   if (mustMovePieces.length === 0) {
     return true;
   }
   
+  // ✅ فقط مهره‌های با رنگ مشخص می‌توانند حرکت کنند
   return piece.color === gameState.lastMovedPieceColor;
 };
 
@@ -265,14 +280,62 @@ export const hasValidMoves = (gameState: GameState): boolean => {
   return getAllValidMoves(gameState).length > 0;
 };
 
+// ✅ تابع جدید: چک کردن اینکه آیا بازیکن با رنگ مشخص می‌تواند حرکت کند
+export const canMoveRequiredColor = (gameState: GameState): boolean => {
+  // اگر رنگ خاصی لازم نیست، true برمی‌گرداند
+  if (gameState.lastMovedPieceColor === null) {
+    return true;
+  }
+
+  // پیدا کردن مهره‌های بازیکن فعلی با رنگ مورد نیاز
+  const requiredPieces = gameState.pieces.filter(
+    p => p.color === gameState.lastMovedPieceColor && p.player === gameState.currentPlayer
+  );
+
+  // اگر هیچ مهره‌ای با این رنگ نداشته باشد، می‌تواند هر مهره‌ای را حرکت دهد
+  if (requiredPieces.length === 0) {
+    return true;
+  }
+
+  // چک کردن اینکه آیا حداقل یکی از مهره‌های با رنگ مورد نیاز می‌تواند حرکت کند
+  for (const piece of requiredPieces) {
+    const validMoves = getValidMoves(piece, gameState);
+    if (validMoves.length > 0) {
+      return true; // حداقل یک حرکت معتبر وجود دارد
+    }
+  }
+
+  // هیچ مهره‌ای با رنگ مورد نیاز نمی‌تواند حرکت کند
+  return false;
+};
+
 // Check if current player is blocked (no valid moves)
 export const checkBlocked = (gameState: GameState): Player | null => {
+  console.log('=== CHECK BLOCKED ===');
+  console.log('Current player:', gameState.currentPlayer);
+  console.log('Winner already set:', gameState.winner);
+  
+  // ✅ اگر قبلاً برنده‌ای تعیین شده، هیچ کاری نکن
   if (gameState.winner !== null) {
+    console.log('Winner already exists, skipping blocked check');
     return null;
   }
   
-  if (!hasValidMoves(gameState)) {
-    return gameState.currentPlayer === 'black' ? 'white' : 'black';
+  // ✅ اول چک می‌کنیم که آیا می‌تواند مهره با رنگ مورد نیاز را حرکت دهد
+  if (!canMoveRequiredColor(gameState)) {
+    console.log('❌ Cannot move required color');
+    // اما این به معنای blocked نیست! فقط نوبت باید skip شود
+    return null;
+  }
+  
+  // ✅ حالا چک می‌کنیم که آیا اصلاً حرکتی وجود دارد
+  const hasMove = hasValidMoves(gameState);
+  console.log('Has valid moves:', hasMove);
+  
+  if (!hasMove) {
+    const winner = gameState.currentPlayer === 'black' ? 'white' : 'black';
+    console.log('🚫 Player completely blocked! Winner:', winner);
+    return winner;
   }
   
   return null;
