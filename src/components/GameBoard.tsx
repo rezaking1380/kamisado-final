@@ -69,7 +69,7 @@ const GameBoard = () => {
     >
       <div
         className={cn(
-          "grid grid-cols-8 lg:gap-2 border-2 rounded-lg overflow-hidden gap-1",
+          "grid grid-cols-8 lg:gap-2 border-2 rounded-lg overflow-hidden gap-1 p-2",
           "shadow-xl transition-all duration-500 bg-gradient-to-br from-slate-50 to-slate-200",
           "dark:from-slate-900 dark:to-slate-800 animate-fade-in"
         )}

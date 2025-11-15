@@ -74,6 +74,18 @@ export default {
           black: "#0F0F0F",
           white: "#FAFAFA",
         },
+        "kamisado-dark": {
+          orange: "#CC6F2F",
+          blue: "#0A8AD4",
+          purple: "#7A40CC",
+          pink: "#D1559A",
+          yellow: "#D4B028",
+          red: "#CC3A3A",
+          green: "#1FA85B",
+          brown: "#7A3F22",
+          black: "#E5E5E5",
+          white: "#1A1A1A",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

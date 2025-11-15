@@ -13,14 +13,14 @@ interface BoardCellProps {
 }
 
 const colorMap: Record<Color, string> = {
-  orange: 'bg-kamisado-orange',
-  blue: 'bg-kamisado-blue',
-  purple: 'bg-kamisado-purple',
-  pink: 'bg-kamisado-pink',
-  yellow: 'bg-kamisado-yellow',
-  red: 'bg-kamisado-red',
-  green: 'bg-kamisado-green',
-  brown: 'bg-kamisado-brown'
+  orange: 'bg-kamisado-orange dark:bg-kamisadoDark-orange',
+  blue: 'bg-kamisado-blue dark:bg-kamisadoDark-blue',
+  purple: 'bg-kamisado-purple dark:bg-kamisadoDark-purple',
+  pink: 'bg-kamisado-pink dark:bg-kamisadoDark-pink',
+  yellow: 'bg-kamisado-yellow dark:bg-kamisadoDark-yellow',
+  red: 'bg-kamisado-red dark:bg-kamisadoDark-red',
+  green: 'bg-kamisado-green dark:bg-kamisadoDark-green',
+  brown: 'bg-kamisado-brown dark:bg-kamisadoDark-brown',
 };
 
 const BoardCell = ({ color, position, onClick, children, highlight, isSelected }: BoardCellProps) => {

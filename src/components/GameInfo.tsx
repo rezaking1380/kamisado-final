@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Player } from "@/types/game";
+import { ModeToggle } from "./ThemeToggle";
 
 const GameInfo = () => {
   const {
@@ -85,6 +86,7 @@ const GameInfo = () => {
         <h2 className="text-2xl font-semibold">{t.gameName}</h2>
         <div className="flex items-center gap-2">
           <GuidesSection />
+          <ModeToggle />
           <LanguageSwitcher />
 
           <Button

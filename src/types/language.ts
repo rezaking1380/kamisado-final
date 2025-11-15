@@ -46,7 +46,7 @@ export const translations: Record<Language, Translation> = {
   en: {
     gameName: "Kamisado",
     guides: {
-      title: "Kamisado Rules 🐉",
+      title: "Rules 🐉",
       goal: "🎯 Reach opponent's home row with any tower",
       players: "👥 2 players • 8 towers each • Black vs White",
       setup: "🏰 Start: All towers on your home row",
@@ -89,7 +89,7 @@ export const translations: Record<Language, Translation> = {
   fa: {
     gameName: "کامیسادو",
     guides: {
-      title: "قوانین کامیسادو 🐉",
+      title: "قوانین 🐉",
       goal: "🎯 رساندن یک برج به ردیف خانگی حریف",
       players: "👥 ۲ بازیکن • ۸ برج هر کدام • سیاه در مقابل سفید",
       setup: "🏰 شروع: همه برج‌ها در ردیف خانگی خودتان",
