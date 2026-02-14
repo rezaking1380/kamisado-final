@@ -456,7 +456,7 @@ SOFTWARE.
 
 ### Author
 **Reza Ngr**
-- GitHub: [@yourusername](https://github.com/rezaking1380/kamisado-final)
+- GitHub: [@RezaNgr](https://github.com/rezaking1380/kamisado-final)
 - Email: reza.ngr8@gmail.com
 
 ### Discussion
