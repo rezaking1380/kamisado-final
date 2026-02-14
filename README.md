@@ -456,58 +456,29 @@ SOFTWARE.
 
 ### Author
 **Reza Ngr**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-
-### Issues
-Found a bug? Have a suggestion?
-- [Open an issue](https://github.com/yourusername/kamisado-game/issues)
-- [View existing issues](https://github.com/yourusername/kamisado-game/issues)
+- GitHub: [@yourusername](https://github.com/rezaking1380/kamisado-final)
+- Email: reza.ngr8@gmail.com
 
 ### Discussion
-- [GitHub Discussions](https://github.com/yourusername/kamisado-game/discussions)
+- [GitHub Discussions](https://github.com/rezaking1380/kamisado-game/discussions)
 
----
-
-## 🗺️ Roadmap
-
-### Version 1.1 (Planned)
-- [ ] Difficulty level selector UI
-- [ ] Move history visualization
-- [ ] Game statistics tracking
-- [ ] Sound effects and music
-- [ ] Tournament mode
-
-### Version 1.2 (Future)
-- [ ] Online multiplayer
-- [ ] Game save/load functionality
-- [ ] Opening book for AI
-- [ ] Tutorial/practice mode
-- [ ] Achievements system
-
-### Version 2.0 (Long-term)
-- [ ] Mobile apps (iOS/Android)
-- [ ] Neural network AI
-- [ ] Replay analysis
-- [ ] User accounts and ratings
-- [ ] Tournament system
 
 ---
 
 ## 📊 Project Stats
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/kamisado-game?style=social)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/kamisado-game?style=social)
-![GitHub issues](https://img.shields.io/github/issues/yourusername/kamisado-game)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/yourusername/kamisado-game)
-![GitHub last commit](https://img.shields.io/github/last-commit/yourusername/kamisado-game)
+![GitHub stars](https://img.shields.io/github/stars/rezaking1380/kamisado-game?style=social)
+![GitHub forks](https://img.shields.io/github/forks/rezaking1380/kamisado-game?style=social)
+![GitHub issues](https://img.shields.io/github/issues/rezaking1380/kamisado-game)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/rezaking1380/kamisado-game)
+![GitHub last commit](https://img.shields.io/github/last-commit/rezaking1380/kamisado-game)
 
 ---
 
 
 **[⬆ Back to Top](#-kamisado-game)**
 
-Made with ❤️ by [Reza Ngr](https://github.com/yourusername)
+Made with ❤️ by [Reza Ngr](https://github.com/rezaking1380)
 
 ⭐ Star this repo if you like it!
 
